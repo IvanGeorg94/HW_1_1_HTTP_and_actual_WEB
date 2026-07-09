@@ -6,8 +6,7 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -53,9 +52,7 @@ public class Server {
              BufferedOutputStream out = new BufferedOutputStream(socket.getOutputStream())) {
 
             String requestLine = in.readLine();
-            if (requestLine == null || requestLine.isEmpty()) {
-                return;
-            }
+            if (requestLine == null || requestLine.isEmpty()) return;
 
             String[] parts = requestLine.split(" ");
             if (parts.length != 3) {
@@ -64,9 +61,21 @@ public class Server {
             }
 
             String method = parts[0];
-            String path = parts[1];
+            String fullPath = parts[1];
 
-            Map<String, String> headers = new java.util.HashMap<>();
+            // Отделяем путь от query-строки
+            String pathWithoutQuery;
+            String queryString = null;
+            int qIdx = fullPath.indexOf('?');
+            if (qIdx != -1) {
+                pathWithoutQuery = fullPath.substring(0, qIdx);
+                queryString = fullPath.substring(qIdx + 1);
+            } else {
+                pathWithoutQuery = fullPath;
+            }
+
+            // Читаем заголовки
+            Map<String, String> headers = new HashMap<>();
             String headerLine;
             while ((headerLine = in.readLine()) != null && !headerLine.isEmpty()) {
                 int colonIdx = headerLine.indexOf(':');
@@ -77,15 +86,27 @@ public class Server {
                 }
             }
 
-            Request request = new Request(method, path, headers, "");
+            // Парсим параметры через URLEncodedUtils
+            Map<String, List<String>> queryParams = new HashMap<>();
+            if (queryString != null && !queryString.isEmpty()) {
+                List<org.apache.http.NameValuePair> pairs =
+                        org.apache.http.client.utils.URLEncodedUtils.parse(queryString, java.nio.charset.StandardCharsets.UTF_8);
+                for (org.apache.http.NameValuePair pair : pairs) {
+                    queryParams.computeIfAbsent(pair.getName(), k -> new ArrayList<>()).add(pair.getValue());
+                }
+            }
 
-            Handler handler = handlers.get(method + " " + path);
+            Request request = new Request(method, pathWithoutQuery, headers, "", queryParams);
+
+            // Ищем хендлер по методу и пути без параметров
+            Handler handler = handlers.get(method + " " + pathWithoutQuery);
             if (handler != null) {
                 handler.handle(request, out);
                 return;
             }
 
-            serveStatic(path, out);
+            // Статика
+            serveStatic(pathWithoutQuery, out);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,19 +133,12 @@ public class Server {
         sendResponse(out, 200, mimeType, content);
     }
 
-    // Исправленный метод (без switch-выражений)
     private void sendResponse(BufferedOutputStream out, int statusCode, String mimeType, byte[] content) throws IOException {
         String statusLine;
         switch (statusCode) {
-            case 200:
-                statusLine = "HTTP/1.1 200 OK";
-                break;
-            case 404:
-                statusLine = "HTTP/1.1 404 Not Found";
-                break;
-            default:
-                statusLine = "HTTP/1.1 " + statusCode + " Unknown";
-                break;
+            case 200: statusLine = "HTTP/1.1 200 OK"; break;
+            case 404: statusLine = "HTTP/1.1 404 Not Found"; break;
+            default: statusLine = "HTTP/1.1 " + statusCode + " Unknown"; break;
         }
         out.write((statusLine + "\r\n").getBytes());
         out.write(("Content-Type: " + mimeType + "\r\n").getBytes());
