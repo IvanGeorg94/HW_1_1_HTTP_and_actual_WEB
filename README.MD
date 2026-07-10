@@ -1,47 +1,3 @@
-Skip to content
-netology-code
-jspr-homeworks
-Repository navigation
-Code
-Issues
-Pull requests
-9
- (9)
-Actions
-Projects
-Security and quality
-Insights
-Files
-Go to file
-t
-T
-01_web
-README.md
-02_forms
-04_servlets
-05_di
-06_mvc
-pic
-.DS_Store
-.gitignore
-README.md
-idea-installation.md
-report-requirements.md
-jspr-homeworks/01_web
-/README.md
-vikki-ya
-vikki-ya
-UDP_TXT
-5288095
- · 
-3 years ago
-
-Preview
-
-Code
-
-Blame
-118 lines (79 loc) · 8.49 KB
 # Домашнее задание к занятию «1.1. HTTP и современный Web»
 
 В качестве решения пришлите ссылки на ваш GitHub-проект в личном кабинете студента на сайте [netology.ru](https://netology.ru).
@@ -160,4 +116,3 @@ public class Main {
 В качестве решения пришлите ссылку на ваш Pull Request на GitHub в личном кабинете студента на сайте [netology.ru](https://netology.ru).
 
 После того, как домашнее задание будет принято, сделайте `merge` для Pull Request.
- 
